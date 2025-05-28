@@ -1,0 +1,230 @@
+<!--
+python -m http.server 8000    http://localhost:8000
+-->
+<!DOCTYPE html> 
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>AR sin marcador - Menú interactivo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.min.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    #menu {
+      position: absolute; top: 10px; right: 10px; background: rgba(255, 255, 255, 0.95);
+      padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 10; max-width: 260px;
+    }
+    .menu-section { margin-bottom: 15px; }
+    .section-title {
+      font-weight: bold; cursor: pointer; padding: 8px 12px; background-color: #f0f0f0;
+      border-radius: 8px; margin-bottom: 5px; transition: background 0.3s;
+    }
+    .section-title:hover { background-color: #e0e0ff; color: #6f42c1; }
+    .menu-item {
+      cursor: pointer; margin: 5px 0; padding: 6px 12px; border-radius: 8px; color: #333;
+      transition: background 0.3s;
+    }
+    .menu-item:hover { background-color: #e0f0ff; color: #007bff; }
+    #descripcion {
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: rgba(147, 112, 219, 0.85); padding: 20px 25px;
+      border-radius: 15px; box-shadow: 0 6px 16px rgba(0,0,0,0.25); z-index: 10;
+      max-width: 350px; text-align: left; color: white;
+    }
+    #descripcion h3 { margin: 0 0 10px 0; font-size: 20px; }
+    #descripcion p { margin: 6px 0; font-size: 15px; }
+    #descripcion p span { font-weight: bold; }
+    #controls {
+      position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 10px; z-index: 10;
+    }
+    .control-button {
+      background: rgba(147, 112, 219, 0.85); border: none; color: white;
+      padding: 10px 15px; border-radius: 10px; cursor: pointer; font-weight: bold;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3); transition: background 0.3s;
+      user-select: none;
+    }
+    .control-button:hover { background: rgba(120, 81, 169, 0.9); }
+    #chef-size-controls {
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 9999;
+      background: rgba(100, 0, 150, 0.9);
+      padding: 10px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+
+<div id="menu">
+  <h2>MENÚ</h2>
+  <div class="menu-section">
+    <div class="section-title" onclick="toggleSection('comidas')">🍽️ Comidas</div>
+    <div class="section-content" id="comidas">
+      <div class="menu-item" data-model="models/hamburguesaa.glb"  data-nombre="Hamburguesa Clásica" data-ingredientes="Pan artesanal, carne 100% res, queso cheddar, lechuga, tomate y salsa especial" data-precio="$120.00 MXN">🍔 Hamburguesa</div>
+      <div class="menu-item" data-model="models/pizza.glb" data-nombre="Pizza Pepperoni" data-ingredientes="Masa delgada, salsa de tomate, queso mozzarella, pepperoni" data-precio="$150.00 MXN">🍕 Pizza Pepperoni</div>
+      <div class="menu-item" data-model="models/papas.glb" data-nombre="Papas a la Francesa" data-ingredientes="Papas crujientes fritas en aceite vegetal, sal al gusto" data-precio="$45.00 MXN">🍟 Papas a la Francesa</div>
+    </div>
+  </div>
+
+  <div class="menu-section">
+    <div class="section-title" onclick="toggleSection('postres')">🍰 Postres</div>
+    <div class="section-content" id="postres" style="display: none;">
+      <div class="menu-item" data-model="models/pastel.glb" data-nombre="Pastel de Tres Leches" data-ingredientes="Bizcocho de tres leches, crema, cereza" data-precio="$60.00 MXN">🍫 Pastel</div>
+    </div>
+  </div>
+
+  <div class="menu-section">
+    <div class="section-title" onclick="toggleSection('bebidas')">🥤 Bebidas</div>
+    <div class="section-content" id="bebidas" style="display: none;">
+      <div class="menu-item" data-model="models/cocacola.glb" data-nombre="Refresco" data-ingredientes="Sabor cola, 355ml" data-precio="$25.00 MXN">🥤 Refresco</div>
+    </div>
+  </div>
+
+  <hr />
+  <div class="menu-section">
+    <div class="section-title">👨‍🍳 Mascota del Restaurante</div>
+    <button class="control-button" onclick="activarChef()">Ver Chef 👨‍🍳</button>
+  </div>
+</div>
+
+<div id="mensaje-chef" style="display:none; position:absolute; bottom:20px; left:70%; transform:translateX(-50%); background:#fff0e0; padding:15px 25px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.2); z-index:10; font-weight:bold;">
+  📷 Apunta el marcador Hiro para ver al chef
+</div>
+
+<div id="controls">
+  <button class="control-button" onclick="rotateModel('y')">🔁 Girar horizontal</button>
+  <button class="control-button" onclick="rotateModel('x')">🔄 Girar vertical</button>
+</div>
+
+<div id="chef-size-controls">
+  <button class="control-button" onclick="changeScale(0.1)">➕ Más grande</button>
+  <button class="control-button" onclick="changeScale(-0.1)">➖ Más pequeño</button>
+</div>
+
+<a-scene embedded arjs="sourceType: webcam;">
+  <a-marker preset="hiro" registerevents>
+    <a-entity id="chef-model" gltf-model="models/chef2.glb" position="0 0.3 0" scale="0.5 0.5 0.5" rotation="-90 180 180"></a-entity>
+  </a-marker>
+  <a-entity id="model-container" position="0 0 -2" scale="0.5 0.5 0.5" rotation="0 180 0"></a-entity>
+  <a-entity camera></a-entity>
+</a-scene>
+
+<div id="descripcion">
+  <h3>Selecciona un platillo</h3>
+  <p><span>Ingredientes:</span> --</p>
+  <p><span>Precio:</span> --</p>
+</div>
+
+<script>
+  const container = document.getElementById('model-container');
+  const descripcion = document.getElementById('descripcion');
+  const controls = document.getElementById('chef-size-controls');
+  const chefModel = document.getElementById('chef-model');
+
+  document.querySelectorAll('.menu-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const modelPath = item.getAttribute('data-model');
+      const nombre = item.getAttribute('data-nombre');
+      const ingredientes = item.getAttribute('data-ingredientes');
+      const precio = item.getAttribute('data-precio');
+
+      while(container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+
+      const newModel = document.createElement('a-entity');
+      newModel.setAttribute('gltf-model', modelPath);
+      newModel.setAttribute('position', '0 0.05 0');
+      newModel.setAttribute('scale', '0.8 0.8 0.8');
+      newModel.setAttribute('rotation', '0 180 0');
+      container.appendChild(newModel);
+
+      descripcion.innerHTML = `<h3>${nombre}</h3>
+        <p><span>Ingredientes:</span> ${ingredientes}</p>
+        <p><span>Precio:</span> ${precio}</p>`;
+
+      document.getElementById('mensaje-chef').style.display = 'none';
+      chefModel.parentElement.style.display = 'none';
+      controls.style.display = 'flex';
+    });
+  });
+
+  function rotateModel(axis) {
+    let modelToRotate = null;
+
+    if (container.children.length > 0) {
+      modelToRotate = container.children[0];
+    } else if (chefModel.parentElement.style.display !== 'none') {
+      modelToRotate = chefModel;
+    }
+
+    if (modelToRotate) {
+      let rotation = modelToRotate.getAttribute('rotation');
+      if (axis === 'y') rotation.y += 20;
+      else if (axis === 'x') rotation.x += 20;
+      modelToRotate.setAttribute('rotation', rotation);
+    }
+  }
+
+  function activarChef() {
+    document.getElementById('mensaje-chef').style.display = 'block';
+    while(container.firstChild) {
+      container.removeChild(container.firstChild);
+    }
+    descripcion.innerHTML = `<h3></h3><p>Ver al Chef👨‍🍳</p>`;
+    chefModel.parentElement.style.display = 'block';
+  }
+
+  function changeScale(delta) {
+    let modelToScale = null;
+
+    if (container.children.length > 0) {
+      modelToScale = container.children[0];
+    } else if (chefModel.parentElement.style.display !== 'none') {
+      modelToScale = chefModel;
+    }
+
+    if (modelToScale) {
+      let scale = modelToScale.getAttribute('scale');
+      let newScale = {
+        x: Math.max(0.1, scale.x + delta),
+        y: Math.max(0.1, scale.y + delta),
+        z: Math.max(0.1, scale.z + delta)
+      };
+      modelToScale.setAttribute('scale', newScale);
+    }
+  }
+
+  AFRAME.registerComponent('registerevents', {
+    init: function () {
+      this.el.addEventListener('markerFound', () => {
+        controls.style.display = 'flex';
+        document.getElementById('mensaje-chef').style.display = 'none';
+        descripcion.innerHTML = `<h3>Mascota Chef</h3><p>¡Hola! Soy el chef del restaurante 👨‍🍳</p>`;
+      });
+      this.el.addEventListener('markerLost', () => {
+        controls.style.display = 'none';
+        document.getElementById('mensaje-chef').style.display = 'block';
+        descripcion.innerHTML = `<h3>Mascota Chef</h3><p>Apunta el marcador Hiro para ver al chef 👨‍🍳</p>`;
+      });
+    }
+  });
+
+  function toggleSection(id) {
+    const section = document.getElementById(id);
+    section.style.display = section.style.display === 'none' ? 'block' : 'none';
+  }
+</script>
+
+</body>
+</html>
