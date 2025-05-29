@@ -29,9 +29,9 @@ Este proyecto presenta un **menú digital en Realidad Aumentada**, desarrollado 
 
 ## 🧑‍🍳Activar la opción del chef (marcador de giro)
 
-Para activar la opción especial del chef en realidad aumentada, necesitas utilizar un **marcador de tipo giro**.
+Para activar la opción especial del chef en realidad aumentada, necesitas utilizar un **marcador de tipo Hiro**.
 
-### 🔄 ¿Qué es el marcador giro?
+### 🔄 ¿Qué es el marcador Hiro?
 
 Es una imagen física especial que debe colocarse frente a la cámara para que aparezca el **el chef en 3D**.
 
